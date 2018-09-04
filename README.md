@@ -78,7 +78,7 @@ You may also supply additional flags as so:
 # show a plot
 python3 main.py -p
 # print trajectory information
-python3 main.py -p
+python3 main.py -v
 ```
 
 
