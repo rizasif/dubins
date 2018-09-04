@@ -1,108 +1,10 @@
 # Christopher Iliffe Sprague
 # sprague@kth.se
 
-from math import cos, sin, tan, pi, atan2
+from math import cos, sin, tan, pi
 from random import uniform
 
-def evaluate(solution_function, grade, random=True, obs=None, verbose=False):
-
-    if obs is not None:
-        pass
-    elif not random:
-        obs = [
-        [
-            10.234897348278846,
-            7.426454970638634,
-            0.6036968449353223
-        ],
-        [
-            9.62360178529774,
-            3.5024934390492084,
-            0.640790030775506
-        ],
-        [
-            5.545792206236376,
-            3.1172535599361098,
-            0.5082665691945417
-        ],
-        [
-            12.934926733980326,
-            6.731061250216145,
-            0.5959879020760377
-        ],
-        [
-            8.670001702247484,
-            0.8983442377484021,
-            0.652618220438745
-        ],
-        [
-            15.07117247578524,
-            5.542943578444764,
-            0.5128733414030838
-        ],
-        [
-            5.161444180972378,
-            9.205934481925263,
-            0.5080914934599107
-        ],
-        [
-            13.453025054312407,
-            3.4000502649247615,
-            0.7522400709399546
-        ],
-        [
-            7.6621668116269674,
-            8.620628500804685,
-            0.7754175898925023
-        ],
-        [
-            5.459719078188462,
-            6.211824386849173,
-            0.6247372877261753
-        ],
-        [
-            14.542538486684606,
-            9.274980363181944,
-            0.6507933480043415
-        ],
-        [
-            15.171972300252216,
-            1.0064424626594783,
-            0.7452862888001911
-        ],
-        [
-            4.932792992444652,
-            0.883669003600472,
-            0.6876386432133378
-        ],
-        [
-            11.353164353829955,
-            0.752043219264199,
-            0.5315610243578464
-        ],
-        [
-            12.18303789861043,
-            8.993623583484608,
-            0.6404094018062996
-        ],
-        [
-            7.51339002828059,
-            4.370588682815919,
-            0.5287579124306581
-        ],
-        [
-            11.476995854637153,
-            4.941636225638853,
-            0.6015407536368719
-        ],
-        [
-            8.342699317665362,
-            6.312142803490614,
-            0.5550384214056028
-        ]
-        ]
-    elif random:
-        obs=None
+def evaluate(solution_function, obs, verbose=False):
 
     # initialise environment
     env = Environment(obs=obs)
@@ -114,8 +16,8 @@ def evaluate(solution_function, grade, random=True, obs=None, verbose=False):
     controls, times = solution_function(car)
 
     # return state, control, and time lists, along with doneness and car
-    xl, yl, thetal, ul, tl, done = car.evaluate(controls, times, grade, verbose=verbose)
-    return car, xl, yl, thetal, ul, tl, done
+    xl, yl, thetal, ul, tl, safe, done = car.evaluate(controls, times, verbose=verbose)
+    return car, xl, yl, thetal, ul, tl, safe, done
 
 
 class Car(object):
@@ -173,15 +75,13 @@ class Car(object):
 
         return xn, yn, thetan
 
-    def evaluate(self, controls, times, grade, verbose=False):
+    def evaluate(self, controls, times, verbose=False):
 
         '''
         Returns a simulated final result, given a sequence of controls
         and times. controls[i] is considered constant between times[i]
         and times[i+1].
         '''
-
-        grades = ['E', 'C', 'A']
 
         if len(controls) != len(times) - 1:
             raise ValueError("Control sequence length must be 1 less than times.")
@@ -193,8 +93,6 @@ class Car(object):
             raise ValueError("Time sequence must be increasing.")
         elif any([times[i+1] - times[i] < self.dt-0.000001 for i in range(len(controls))]):
             raise ValueError("Difference in each time must be greater than 0.01 [s].")
-        elif grade not in grades:
-            raise ValueError("Evaluation grade must be in {}.".format(str(grades)))
 
         # states and time lists with initial configuration
         xl     = [self.x0]
@@ -225,19 +123,19 @@ class Car(object):
                 # record time
                 tl.append(tl[-1] + self.dt)
 
-                # break if not safe
-                if grade is 'E':
-                    if not self._environment.inbounds(xn, yn):
-                        term = True
-                        break
-                    else:
-                        term = False
-                if grade is "C" or grade is "A":
-                    if not self._environment.safe(xn, yn):
-                        term = True
-                        break
-                    else:
-                        term = False
+                # get safety and doneness
+                safe = self._environment.safe(xn, yn)
+                done = True if ((self.xt-xn)**2 + (self.yt-yn)**2)**0.5 < 1 else False
+
+                # terminate if safe or done
+                if not safe:
+                    term = True
+                    break
+                elif done:
+                    term = True
+                    break
+                else:
+                    term = False
 
             if term == True:
                 break
@@ -245,43 +143,35 @@ class Car(object):
         # extend last control to signify constant value between times
         ul.append(ul[-1])
 
-        # safety
-        safe = self._environment.safe(xn, yn)
-
-        # grades
-        if grade is "E":
-            done = True if abs(self.xt-xn) <= 0.1 else False
-        elif grade is "C":
-            done = True if ((self.xt-xn)**2+(self.yt-yn)**2)**0.5 <= 0.1 else False
-        elif grade is "A":
-            done = True if ((self.xt-xn)**2+(self.yt-yn)**2)**0.5 <= 0.1 and abs(thetan) <= 0.1 else False
-
         # return states, controls, times, final saftey, and done
-        return xl, yl, thetal, ul, tl, done
+        return xl, yl, thetal, ul, tl, safe, done
 
 class Environment(object):
 
     '''
     Environment described by a rectangle [(0,0),(Lx,0),(Lx,Ly),(0,Ly)],
     containing n circular obstacles of radius r, positioned randomly
-    within the rectangle.
+    within.
     '''
-
 
     def __init__(self, obs=None):
 
-        # horizontal length
+        # horizontal length - these values work well
         self.lx  = float(20)
         # vertical length
         self.ly  = float(10)
 
-        # if given obstacle list
-        if obs is not None:
-            self.obstacles = [Obstacle(*ob) for ob in obs]
-
-        # otherwise initialise obstacles randomly
-        else:
+        # initialise obstacles randomly
+        if obs is None:
             self.init_obstacles()
+
+        # intentionally no obstacles
+        elif obs is False:
+            pass
+
+        # initialise supplied obstacles
+        else:
+            self.obstacles = [Obstacle(*ob) for ob in obs]
 
     def init_obstacles(self):
 

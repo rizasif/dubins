@@ -1,17 +1,18 @@
 # Dubin's Car
 
 ## Installation
-Ensure that you have a working installation of python3, then run the following in a terminal to obtain the code:
+After ensuring that you have a working version of Python 3 and Git, you can obtain the source code by cloning this repository as so:
 ```bash
 git clone https://github.com/cisprague/dubins.git
 ```
 
+
 ## Description
 In this assignment you're tasked to implement a robotic planning method in order to drive a Dubin's car, with the following dynamics,
 ```python
-dx     = cos(theta)
-dy     = sin(theta)
-dtheta = tan(phi)
+x[n+1]     = x[n]     + cos(theta)
+y[n+1]     = y[n]     + sin(theta)
+theta[n+1] = theta[n] + tan(phi)
 ```
 , from an initial position `(x0,y0)` to a target position `(xt, yt)`, while avoiding both collisions with obstacles and venturing out of bounds.
 
@@ -24,12 +25,15 @@ And the sole control variable is the steering angle `phi ∈ [-pi/4, pi/4]`.
 
 ## Tasks
 
-We'll consider three graded tasks in order of difficulty:
- - **E**: Reach the target without obstacles.
- - **C**: Reach the target with obstacles.
- - **+**: Reach the target with obstacles, and with a final heading angle of zero.
+We'll consider two graded tasks in order of difficulty:
+ - **E**: Reach the target with spherical obstacles.
+ - **C**: Reach the target with line obstacles
 
-Using the API, explained below, generate a sequence of steering angle commands `controls` and a sequence of times `times`, between which the commands are executed, that would yield a collision free and task fulfilling trajectory. Note that grade **+** is completely optional and will not contribute to your grade, but interested students are encouraged to attempt it.
+Using the API, explained below, generate a sequence of steering angle commands `controls` and a sequence of times `times`, between which the commands are executed, that would yield a collision free and task fulfilling trajectory.
+
+You should end up with a solution that looks something like this:
+
+![](plot.svg)
 
 ## Solution
 Submit a file named `solution.py`,
@@ -53,21 +57,32 @@ def solution(car):
 
 Your `solution` function should implement a robotic planning method, with the use of the attributes and methods of `Car`, to produce a sequence of steering angles and times at which they're executed, that would drive the car successfully in accordance to the previously detailed tasks.
 
-Note that obstacles, origin position, and target position are randomised upon initialisation of `Car`, so each `car` is different.
+Note that:
+ - Each steering angle `controls[i]` is considered to be constant between `times[i]` and `times[i+1]`, so`controls` must be one element shorter than `times`, i.e. `len(controls) == len(times) - 1`.
+ - The initial time must be zeros, i.e. `times[0] == 0`.
+ - Each steering angle must be admissible, i.e. `-pi/4 <= controls[i] <= pi/4`.
+ - The time sequence must increase, i.e. `times[i+1] > times[i]`.
+ - The sequence time-step size must satisfy `times[i+1] - times[i] < 0.01`.
 
-You can evaluate your performance using the `evaluate` method of `dubins` by running the following in a terminal to see how successful your solution is among the test cases:
-```
-python3 main.py
+
+You can evaluate your solution by executing the following terminal command from within the dubins directory:
+
+```bash
+>>> python3 main.py
+Grade E: 4/4 cases passed.
+Grade C: 4/4 cases passed.
 ```
 
-And if you wish to see a visualisation of the trajectory:
+You may also supply additional flags as so:
+```bash
+# show a plot
+python3 main.py -p
+# print trajectory information
+python3 main.py -p
 ```
-python3 main.py plot
-```
+
 
 ## API
-
-### Car
 
 In this assignment, we'll work exclusively with the `Car` object, which you can import and instantiate as follows:
 
@@ -101,30 +116,3 @@ and returns a tuple of the form `(xn, yn, thetan)`, containing:
  - `xn : float`: new x-position
  - `yn : float`: new y-position
  - `thetan : float`: new heading angle
-
-### Evaluate
-
-The function which will be used to grade your performance, is `evaluate(solution_function, grade, random=True, verbose=False)`, which takes as its arguments:
- - `solution_function : callable`: your solution function
- - `grade : str`: grade level at which to grade your function
- - `random : bool`: use random obstacles if `True`, otherwise use precomputed obstacles from Kattis
- - `verbose : bool`: toggles printing of dynamics integration
-
-and returns a tuple of the form `(xl, yl, thetal, phil, tl, safe, done)` containing:
- - `car : Car`: car object for which your solution function was evaluated
- - `xl : list`: sequence of x-positions `xl[i] : float`
- - `yl : list`: sequence of y-positions `yl[i] : float`
- - `thetal : list`: sequence of heading angles `thetal[i] : float`
- - `phil : list`: sequence of steering angles `phil[i] : float`
- - `tl : list`: sequence of times `tl[i] : float`
- - `done : bool`: success of trajectory for corresponding grade:
-   - `grade == "E"`: `True` if final x-position is approximately at target x-position
-   - `grade == "C"`: `True` if final position is approximately at target position
-   - `grade == "A"`: `True` if final position is approximately at target position and heading angle is close to zero
-
-Note that:
- - Each steering angle `controls[i]` is considered to be constant between `times[i]` and `times[i+1]`, so`controls` must be one element shorter than `times`, i.e. `len(controls) == len(times) - 1`.
- - The initial time must be zeros, i.e. `times[0] == 0`.
- - Each steering angle must be admissible, i.e. `-pi/4 <= controls[i] <= pi/4`.
- - The time sequence must increase, i.e. `times[i+1] > times[i]`.
- - The sequence time-step size must satisfy `times[i+1] - times[i] < 0.01`.
