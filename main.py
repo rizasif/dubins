@@ -125,7 +125,7 @@ def main(solution_function, plot=False, verbose=False):
         ax[0,0].set_title("E")
         ax[0,1].set_title("C")
 
-        fig.savefig("plot.svg", dpi=1000, bbox_inches="tight")
+        #fig.savefig("plot.svg", dpi=1000, bbox_inches="tight")
 
         # show plot
         plt.show()
