@@ -6,13 +6,12 @@ After ensuring that you have a working version of Python 3 and Git, you can obta
 git clone https://github.com/cisprague/dubins.git
 ```
 
-
 ## Description
 In this assignment you're tasked to implement a robotic planning method in order to drive a Dubin's car, with the following dynamics,
 ```python
-x[n+1]     = x[n]     + cos(theta)
-y[n+1]     = y[n]     + sin(theta)
-theta[n+1] = theta[n] + tan(phi)
+x[t+1]     = x[t]     + cos(theta[t])
+y[t+1]     = y[t]     + sin(theta[t])
+theta[t+1] = theta[t] + tan(phi[t])
 ```
 , from an initial position `(x0,y0)` to a target position `(xt, yt)`, while avoiding both collisions with obstacles and venturing out of bounds.
 
@@ -69,8 +68,8 @@ You can evaluate your solution by executing the following terminal command from 
 
 ```bash
 >>> python3 main.py
-Grade E: 4/4 cases passed.
-Grade C: 4/4 cases passed.
+Grade E: 6/6 cases passed.
+Grade C: 6/6 cases passed.
 ```
 
 You may also supply additional flags as so:
