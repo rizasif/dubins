@@ -61,7 +61,7 @@ Note that:
  - The initial time must be zeros, i.e. `times[0] == 0`.
  - Each steering angle must be admissible, i.e. `-pi/4 <= controls[i] <= pi/4`.
  - The time sequence must increase, i.e. `times[i+1] > times[i]`.
- - The sequence time-step size must satisfy `times[i+1] - times[i] < 0.01`.
+ - The sequence time-step size must be less than 0.01, i.e. `times[i+1] - times[i] > 0.01`.
 
 
 You can evaluate your solution by executing the following terminal command from within the dubins directory:
