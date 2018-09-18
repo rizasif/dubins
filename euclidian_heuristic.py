@@ -7,7 +7,7 @@ class EucliHeur:
     Start = []
     Goal = []
 
-    def __init__(self, start, goal, obstacles, inflation=2.0):
+    def __init__(self, start, goal, obstacles, inflation=1.25):
         self.Obstacles = obstacles
         self.Start = start
         self.Goal = goal
@@ -16,7 +16,7 @@ class EucliHeur:
     def isInCollision(self, n):
         for ob in self.Obstacles:
             dist = math.sqrt((math.pow((n[2] - ob[0]), 2)) + (math.pow((n[3] - ob[1]), 2)))
-            if ( dist <= ob[2]*self.Inflation ):
+            if ( dist <= (ob[2]*self.Inflation) ):
                 return True
         return False
 
@@ -25,16 +25,16 @@ class EucliHeur:
         return math.sqrt(x)
 
     def getHeuristic(self, n):
-        x = (math.pow((n[2] - self.Goal[2]), 2)) + (math.pow((n[3] - self.Goal[3]), 2)) + (math.pow((n[4] - self.Goal[4]), 2))
+        x = (math.pow((n[2] - self.Goal[2]), 2)) + (math.pow((n[3] - self.Goal[3]), 2)) #+ (math.pow((n[4] - self.Goal[4]), 2))
         if (self.isInCollision(n)):
             # print("Collision Found")
             return 2000
         else:
             return math.sqrt(x)
 
-    def getCost(self, n):
-        x = (math.pow((n[2] - self.Start[2]), 2)) + (math.pow((n[3] - self.Start[3]), 2))
-        return x
+    # def getCost(self, n):
+    #     x = (math.pow((n[2] - self.Start[2]), 2)) + (math.pow((n[3] - self.Start[3]), 2))
+    #     return x
 
     def getFixedCost(self):
         return 1

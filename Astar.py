@@ -71,7 +71,7 @@ class AStar(Algorithm):
     def Expand(self, n):
         succs = []
         for prim in self.Primitives:
-            nx, ny, tn = self.StepFunc(n[2],n[3],n[4],prim)
+            nx, ny, tn = self.StepFunc(n[2]+self.Res,n[3]+self.Res,n[4],prim)
             state = [n[0], prim, nx, ny, tn, 0, n[6]]
             if self.isInLimits(state) and (not self.isDiscivered(state)):
                 state[5], state[6] = self.updateFCost(state)
@@ -142,7 +142,7 @@ class AStar(Algorithm):
             if (not len(self.OPEN)>0):
                 print("OPEN Empty")
                 break
-            elif( itr > 3000):
+            elif( itr > 500):
                 print("Max States Expanded")
                 break
 
