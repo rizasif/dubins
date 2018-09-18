@@ -1,4 +1,4 @@
-from algorith_abstract import Algorithm
+from algorithm_abstract import Algorithm
 from euclidian_heuristic import EucliHeur
 import math
 import numpy as np
@@ -18,18 +18,18 @@ class AStar(Algorithm):
     #STATE
     isSolutionFound = False
 
-
-    def __init__(self, boundary, start, goal, obstacles, space_resolution, stepFunction, primitives=5, primitive_bounds=[-math.pi/4.0, math.pi/4.0]):
+    def __init__(self, boundary, start, goal, obstacles, space_resolution, stepFunction,
+     primitives=45, primitive_bounds=[-math.pi/4.0, math.pi/4.0], rounding=8):
 
         #Abstract Variables
         self.OPEN = []
         self.CLOSE = []
-        self.boundary = boundary
+        self.Boundry = boundary
         self.Start = start
         self.Goal = goal
         self.Obstacles = obstacles
         self.Res = space_resolution
-        self.Path = []
+        self.Path = {}
 
         #Heuristic Functions
         self.Heur = EucliHeur(self.Start, self.Goal, self.Obstacles)
@@ -38,39 +38,49 @@ class AStar(Algorithm):
         self.DFunc = self.Heur.getDistance
 
         #Class Variables
-        self.StateSpace = []
+        #self.StateSpace = []
         self.StepFunc = stepFunction
         self.NumPrimitives = primitives
         self.PrimBounds = primitive_bounds
         self.Primitives = self.GetPrimitives(self.NumPrimitives, self.PrimBounds)
+        self.Rounding = rounding
+
+        print("Primitives: {}".format(self.Primitives))
 
 
     #--Overwrite Functions--
 
     def getNext(self):
-        n = self.OPEN.pop(0)
-        self.CLOSE.append(n)
+        n = None
+        while True:
+            n = self.OPEN.pop(0)
+            if not self.isDiscivered(n) or len(self.OPEN) == 0:
+                break
+        self.CLOSE.append(self.MakePoint(n))
 
-        sn = ScaleState(n)
-        if sn in self.StateSpace:
-            return AStar.DISCOVERED, n
-        elif self.isGoal(n):
+        if self.isGoal(n):
             return AStar.GOAL_FOUND, n
         else:
             return AStar.UNDISCOVERED, n
        
     def updateFCost(self, n):
         n[5] = self.Heur.getHeuristic(n) + self.Heur.getFixedCost()
+        return n[5]
 
     def Expand(self, n):
         succs = []
-
         for prim in self.Primitives:
-            nx, ny, tn = self.StepFunc(n[0],n[1],n[2],prim)
+            nx, ny, tn = self.StepFunc(n[2],n[3],n[4],prim)
             state = [n[0], prim, nx, ny, tn, 0, 1000]
-            if self.isInLimits(state) and (not self.ScaleState(state) in self.StateSpace):
-                self.UpdateFCost(state)
+            if self.isInLimits(state) and (not self.isDiscivered(state)):
+                state[5] = self.updateFCost(state)
                 succs.append(state)
+                # print("Succ: ({},{},{},{}) => ({},{},{}) H: {}".format(n[2],n[3],n[4],prim, nx,ny,tn, state[5]))
+            # else:
+            #     if not self.isInLimits(state):
+            #         print("Succs notin bound: {}".format(state))
+            #     elif(self.isDiscivered(state)):
+            #         print("Succs discovered: {}".format(state))
 
         if len(succs) == 0:
             return False, succs
@@ -79,56 +89,101 @@ class AStar(Algorithm):
 
     #--Class Functions--
 
-    def ScaleState(self, n):
-        return math.round((self.DFunc(n, [0,0]))/self.Res, 4)
+    def isDiscivered(self, n):
+        # p = self.MakePoint(n)
+        # print("Checking {} => {} in {}".format(n,p,self.CLOSE))
+        # return p in self.CLOSE
+        return self.isInList(n,self.CLOSE)
+
+    def MakePoint(self, n):
+        # return ( round(n[2],self.Rounding), round(n[3],self.Rounding), round(n[4],self.Rounding))
+        return n
+        
+    # def StorePoint(self, n):
+    #     self.StateSpace.append(self.MakePoint(n))
+
+    # def ScaleState(self, n):
+    #     return round((self.DFunc(n, [0,0]))/self.Res, 4)
 
     def GetPrimitives(self, num_of_primitives, bounds):
         return np.linspace(bounds[0],bounds[1],num_of_primitives)
+
+    def Reconstruct(self):
+        path = []
+        key = self.getLastId()
+        while key > 0:
+            data = self.Path[key]
+            path.append(data[1])
+            key = data[0]
+        return path
+
+    def ExpansionConstruct(self):
+        path = []
+        for key in self.Path.keys():
+            path.append(self.Path[key][1])
+        return path
 
     def run(self):
         
         AStar.isSolutionFound = False
         
-        self.Start[5] = self.Heur.getHeuristic(self.start)
+        self.Start[5] = self.Heur.getHeuristic(self.Start)
+        self.Start[0] = self.getNewId()
+        self.Start[1] = 0.0
         self.OPEN.append(self.Start)
 
+        itr = 0
+
         while(not AStar.isSolutionFound):
-            
-            assert(not self.isOpenEmpty())
+            print("Iterations: {}".format(itr))
+            itr +=1
+
+            if (not len(self.OPEN)>0):
+                print("OPEN Empty")
+                break
+            elif( itr > 3000):
+                print("Max States Expanded")
+                break
 
             status, state = self.getNext()
-            Path[getNextId()] = [state[0], state[1]] 
+            new_id = self.getNewId()
+            self.Path[new_id] = [state[0], state[1]]
+            state[0] = new_id
             
             if status == AStar.GOAL_FOUND:
                 print("Goal found!")
                 AStar.isSolutionFound = True
                 break
-            elif status == AStar.Discovered:
+            elif status == AStar.DISCOVERED:
+                print("Discovered State Found")
                 continue
             elif status == AStar.FALIURE:
                 print("Faliure")
                 break
 
+            # print("Expanding: {} From: {}".format(state, self.OPEN))
             succ_exist, succs = self.Expand(state)
-            if not succ_exsit:
+            if not succ_exist:
                 print("No Successor Found")
                 continue
             
             for s in succs:
                 s[6] += self.Heur.getFixedCost()
 
-                if(self.isInList(s, self.OPEN)):
-                    temp, element = self.getFromList(s, self.OPEN)
-                    self.OPEN.pop(element)
+                # if(self.isInList(s, self.OPEN)):
+                #     # print("{} exists in OPEN".format(s))
+                #     isFound, element = self.getFromList(s, self.OPEN)
+                #     if isFound:
+                #         self.OPEN.pop(element)
                 self.OPEN.append(s)
-                self.StateSpace.append(self.ScaleState(s))
 
             self.sortList(self.OPEN)
+            # print("OPEN: {}".format(self.OPEN))
         
         if AStar.isSolutionFound:
-            return self.Path
+            return self.Reconstruct()
         else:
-            return None
+            return self.ExpansionConstruct()
         
 
 

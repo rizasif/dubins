@@ -21,8 +21,10 @@ def main(solution_function, plot=False, verbose=False):
     E = list()
 
     # test solution function on each configuration
-    for obs in obsl:
-        E.append(evaluate(solution, obs, verbose=verbose))
+    # for obs in obsl:
+    #     E.append(evaluate(solution, obs, verbose=verbose))
+    E.append(evaluate(solution, obsl[0], verbose=verbose))
+    E.append(evaluate(solution, obsl[1], verbose=verbose))
 
     '''C: line obstacles'''
 
@@ -37,8 +39,11 @@ def main(solution_function, plot=False, verbose=False):
     C = list()
 
     # test solution function on each configuration
-    for obs in obsl:
-        C.append(evaluate(solution, obs, verbose=verbose))
+    # for obs in obsl:
+    #     C.append(evaluate(solution, obs, verbose=verbose))
+
+    C.append(evaluate(solution, obsl[0], verbose=verbose))
+    C.append(evaluate(solution, obsl[1], verbose=verbose))
 
     '''E results'''
 
