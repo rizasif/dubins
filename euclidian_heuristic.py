@@ -25,7 +25,7 @@ class EucliHeur:
         return math.sqrt(x)
 
     def getHeuristic(self, n):
-        x = (math.pow((n[2] - self.Goal[2]), 2)) + (math.pow((n[3] - self.Goal[3]), 2)) + (math.pow((n[4] - 0.0), 2))
+        x = (math.pow((n[2] - self.Goal[2]), 2)) + (math.pow((n[3] - self.Goal[3]), 2)) + (math.pow((n[4] - self.Goal[4]), 2))
         if (self.isInCollision(n)):
             # print("Collision Found")
             return 2000

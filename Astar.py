@@ -19,7 +19,7 @@ class AStar(Algorithm):
     isSolutionFound = False
 
     def __init__(self, boundary, start, goal, obstacles, space_resolution, stepFunction,
-     primitives=45, primitive_bounds=[-math.pi/4.0, math.pi/4.0], rounding=8):
+     primitives=90, primitive_bounds=[-math.pi/4.0, math.pi/4.0], rounding=8):
 
         #Abstract Variables
         self.OPEN = []
@@ -64,16 +64,17 @@ class AStar(Algorithm):
             return AStar.UNDISCOVERED, n
        
     def updateFCost(self, n):
-        n[5] = self.Heur.getHeuristic(n) + self.Heur.getFixedCost()
-        return n[5]
+        n[6] += self.Heur.getFixedCost()
+        n[5] = self.Heur.getHeuristic(n) + n[6]
+        return n[5], n[6]
 
     def Expand(self, n):
         succs = []
         for prim in self.Primitives:
             nx, ny, tn = self.StepFunc(n[2],n[3],n[4],prim)
-            state = [n[0], prim, nx, ny, tn, 0, 1000]
+            state = [n[0], prim, nx, ny, tn, 0, n[6]]
             if self.isInLimits(state) and (not self.isDiscivered(state)):
-                state[5] = self.updateFCost(state)
+                state[5], state[6] = self.updateFCost(state)
                 succs.append(state)
                 # print("Succ: ({},{},{},{}) => ({},{},{}) H: {}".format(n[2],n[3],n[4],prim, nx,ny,tn, state[5]))
             # else:
@@ -168,7 +169,7 @@ class AStar(Algorithm):
                 continue
             
             for s in succs:
-                s[6] += self.Heur.getFixedCost()
+                # s[6] += self.Heur.getFixedCost()
 
                 # if(self.isInList(s, self.OPEN)):
                 #     # print("{} exists in OPEN".format(s))

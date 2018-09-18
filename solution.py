@@ -15,10 +15,11 @@ def solution(car):
 
     boundary = [[car.xlb,car.ylb],[car.xub,car.yub]]
     start = [0,0,car.x0,car.y0,0,0,0]
-    goal = [-1,-1,car.xt,car.yt,0,0,0]
+    gt = math.atan2(car.yt-car.y0, car.xt-car.x0)
+    goal = [-1,-1,car.xt,car.yt,gt,0,0]
     obstacles = car.obs
     #space_resolution = min(obstacles, key = lambda t: t[2])[2]/4.0 #smallest obstacle
-    space_resolution = car.dt/4.0
+    space_resolution = car.dt
     stepFunction = car.step
 
     print("Resolution: {}".format(space_resolution))
