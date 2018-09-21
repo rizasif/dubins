@@ -7,7 +7,7 @@ class EucliHeur:
     Start = []
     Goal = []
 
-    def __init__(self, start, goal, obstacles, inflation=2.0):
+    def __init__(self, start, goal, obstacles, inflation=1.2):
         self.Obstacles = obstacles
         self.Start = start
         self.Goal = goal
@@ -25,7 +25,7 @@ class EucliHeur:
         return math.sqrt(x)
 
     def getHeuristic(self, n):
-        x = (math.pow((n[2] - self.Goal[2]), 2)) + (math.pow((n[3] - self.Goal[3]), 2)) + (math.pow((n[4] - self.Goal[4]), 2))
+        x = (math.pow((n[2] - self.Goal[2]), 2)) + (math.pow((n[3] - self.Goal[3]), 2)) #+ (math.pow((n[4] - self.Goal[4]), 2))
         if (self.isInCollision(n)):
             # print("Collision Found")
             return 2000

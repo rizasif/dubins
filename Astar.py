@@ -142,7 +142,7 @@ class AStar(Algorithm):
             if (not len(self.OPEN)>0):
                 print("OPEN Empty")
                 break
-            elif( itr > 3000):
+            elif( itr > 1000):
                 print("Max States Expanded")
                 break
 
