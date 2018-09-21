@@ -16,7 +16,7 @@ class EucliHeur:
     def isInCollision(self, n):
         for ob in self.Obstacles:
             dist = math.sqrt((math.pow((n[2] - ob[0]), 2)) + (math.pow((n[3] - ob[1]), 2)))
-            if ( dist <= ob[2]*self.Inflation ):
+            if ( dist <= (ob[2]*self.Inflation) ):
                 return True
         return False
 
@@ -32,9 +32,9 @@ class EucliHeur:
         else:
             return math.sqrt(x)
 
-    def getCost(self, n):
-        x = (math.pow((n[2] - self.Start[2]), 2)) + (math.pow((n[3] - self.Start[3]), 2))
-        return x
+    # def getCost(self, n):
+    #     x = (math.pow((n[2] - self.Start[2]), 2)) + (math.pow((n[3] - self.Start[3]), 2))
+    #     return x
 
     def getFixedCost(self):
         return 1
