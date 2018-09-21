@@ -42,7 +42,7 @@ class RRT():
         #     return p1[0] + self.epsilon*math.cos(theta), p1[1] + self.epsilon*math.sin(theta), theta
 
         phi = math.atan2(p2[1]-p1[1],p2[0]-p1[0])
-        phi = p1[2]-phi
+        phi = phi-p1[2]
         
         # assert( (phi >= self.PrimBounds[0]) and (phi <= self.PrimBounds[1]) )
         if phi < self.PrimBounds[0]:
@@ -81,11 +81,26 @@ class RRT():
             # print("Outside")
             return False
 
+    def circle_intersect(self,x1, y1, x2, y2, r1, r2): 
+        distSq = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)  
+        radSumSq = (r1 + r2) * (r1 + r2)
+        if (distSq == radSumSq): 
+            return True
+        elif (distSq > radSumSq): 
+            return False
+        else: 
+            return True
+
     def isCollision(self, p1, p2):
         a,b,c = self.point2line(p1,p2)
+        cx = (p1[0]+p2[0])/2.0
+        cy = (p1[1]+p2[1])/2.0
+        r = math.sqrt(math.pow(p1[0]-p2[0],2) + math.pow(p1[1]-p2[1],2))/2.0
+        
         for ob in self.Obstacles:
-            if self.checkCollision(a,b,c,ob[0],ob[1],ob[2]):
-                return True
+            if self.circle_intersect(cx,cy, ob[0],ob[1],r,ob[2]):
+                if self.checkCollision(a,b,c,ob[0],ob[1],ob[2]):
+                    return True
         return False
 
     def run(self):
@@ -107,9 +122,9 @@ class RRT():
             newNode = (nx,ny,nt,phi,self.getNewId(),nn[4])
             if self.isCollision(nn, newNode):
                 print("Collision Found")
-                continue
-            nodes[newNode[4]] = newNode
-            print("NewNode: {}".format(newNode))
+            else:
+                nodes[newNode[4]] = newNode
+                print("NewNode: {}".format(newNode))
 
         
         # Check goal
