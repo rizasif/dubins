@@ -5,10 +5,10 @@ import random
 class RRT():
 
     def __init__(self, boundary, start, goal, obstacles, space_resolution, stepFunction,
-     primitives=90, primitive_bounds=[-math.pi/4.0, math.pi/4.0], rounding=8):
+     primitives=90, primitive_bounds=[-math.pi/4.0, math.pi/4.0], rounding=8, inflation=1.5):
         
         self.epsilon = 0.1
-        self.num_of_nodes = 5000
+        self.num_of_nodes = 2000
 
         self.Boundry = boundary
         self.Start = start
@@ -20,6 +20,7 @@ class RRT():
         self.PrimBounds = primitive_bounds
         self.Primitives = self.GetPrimitives(self.NumPrimitives, self.PrimBounds)
         self.Rounding = rounding
+        self.ObstacleInflation = inflation
 
         self.id = -1
 
@@ -34,21 +35,61 @@ class RRT():
         x = (math.pow((n1[0] - n2[0]), 2)) + (math.pow((n1[1] - n2[1]), 2))
         return math.sqrt(x)
 
-    def step(self,p1,p2):
-        # if self.getDistance(p1,p2) <= self.epsilon:
-        #     return None
-        # else:
-        #     theta = math.atan2(p2[1]-p1[1],p2[0]-p1[0])
-        #     return p1[0] + self.epsilon*math.cos(theta), p1[1] + self.epsilon*math.sin(theta), theta
+    def steering_angle(self,V,Rg):
+        V = np.array([V[0],V[1],0])
+        Rg = np.array([Rg[0],Rg[1],0])
+        angle = (np.dot(V,Rg))/( (np.linalg.norm(V))*(np.linalg.norm(Rg)) )
+        direction = np.dot(np.cross(V,Rg),[0,0,1])/( (np.linalg.norm(V))*(np.linalg.norm(Rg)) )
+        if angle < -0.25*math.pi:
+            angle = -0.25*math.pi
+        if angle > 0.25*math.pi:
+            angle = 0.25*math.pi
+        if direction >0:
+            angle = angle
+        if direction < 0:
+            angle = -angle
+        return angle
 
-        phi = math.atan2(p2[1]-p1[1],p2[0]-p1[0])
-        phi = phi-p1[2]
+    def step(self,p1,p2):
+
+        v = [math.cos(p1[2]), math.sin(p1[2])]
+        g = [p2[0]-p1[0], p2[1]-p1[1]]
+        phi = self.steering_angle(v,g)
+
+        # tn = math.atan2( (p2[1]-p1[1]), (p2[0]-p1[0]) )
         
-        # assert( (phi >= self.PrimBounds[0]) and (phi <= self.PrimBounds[1]) )
-        if phi < self.PrimBounds[0]:
-            phi = self.PrimBounds[0]
-        elif phi > self.PrimBounds[1]:
-            phi = self.PrimBounds[1]
+        # print("P1: {}".format(p1))
+        # v = [ p1[0]*math.cos(p1[2]), p1[1]*math.sin(p1[2]) ,0 ]
+        # g = [ (p2[0]-p1[0])*math.cos(tn), (p2[1]-p1[1])*math.sin(tn), 0 ]
+
+        # k = [(p2[0]-p1[0]), (p2[1]-p1[1])]
+        # j = [(self.Goal[0]-p1[0]),(self.Goal[1]-p1[1])]
+
+        # print("g: {}, v:{}".format(k,j))
+        # sinphi = np.linalg.norm(np.cross(k,j))/(np.linalg.norm(k)*np.linalg.norm(j))
+        # cosphi = np.linalg.norm(np.dot(k,j))/(np.linalg.norm(k)*np.linalg.norm(j))
+        # print("sinphi: {}".format(sinphi))
+        # print("cosphi: {}".format(cosphi))
+
+        # phi = math.atan2(sinphi,cosphi)
+        # print("phi: {}".format(phi))
+        
+        # if math.isnan(phi):
+        #     phi = 0.0
+        
+        # if phi < self.PrimBounds[0]:
+        #     phi = self.PrimBounds[0]
+        # elif phi > self.PrimBounds[1]:
+        #     phi = self.PrimBounds[1]
+        # else:
+        #     phi = 0.0
+
+        # if phi < self.PrimBounds[0]:
+        #     phi = self.PrimBounds[0]
+        # elif phi > self.PrimBounds[1]:
+        #     phi = self.PrimBounds[1]
+        # else:
+        #     phi = 0.0
         
         nx,ny,nt = self.StepFunc(p1[0], p1[1], p1[2], phi)
         return nx,ny,nt,phi
@@ -98,10 +139,18 @@ class RRT():
         r = math.sqrt(math.pow(p1[0]-p2[0],2) + math.pow(p1[1]-p2[1],2))/2.0
         
         for ob in self.Obstacles:
-            if self.circle_intersect(cx,cy, ob[0],ob[1],r,ob[2]):
-                if self.checkCollision(a,b,c,ob[0],ob[1],ob[2]):
+            if self.circle_intersect(cx,cy, ob[0],ob[1],r,ob[2]*self.ObstacleInflation):
+                if self.checkCollision(a,b,c,ob[0],ob[1],ob[2]*self.ObstacleInflation):
                     return True
         return False
+
+        # for ob in self.Obstacles:
+        #     dx = ob[0] - p2[0]
+        #     dy = ob[1] - p2[1]
+        #     d = math.sqrt(dx * dx + dy * dy)
+        #     if d <= ob[2]*self.ObstacleInflation:
+        #         return True  # collision
+        # return False  # safe
 
     def run(self):
         nodes = {} # nodes[id] = (x,y,theta,phi,id,parent)
@@ -119,16 +168,34 @@ class RRT():
                 if self.getDistance(p,rand) < self.getDistance(nn,rand):
                     nn = p
             nx, ny, nt, phi = self.step(nn, rand)
-            newNode = (nx,ny,nt,phi,self.getNewId(),nn[4])
-            if self.isCollision(nn, newNode):
-                print("Collision Found")
-            else:
-                nodes[newNode[4]] = newNode
-                print("NewNode: {}".format(newNode))
+            # newNode = (nx,ny,nt,phi,self.getNewId(),nn[4])
+            # if self.isCollision(nn, newNode):
+            #     print("Collision Found")
+            # else:
+            #     nodes[newNode[4]] = newNode
+            #     print("NewNode: {}".format(newNode))
+            xl = [nn[0]]
+            yl = [nn[1]]
+            thetal = [nn[2]]
+            incr = 0
+            while incr <= 1:
+                xn , yn , thetan = self.StepFunc(xl[-1],yl[-1],thetal[-1],phi)
+                xl.append(xn)
+                yl.append(yn)
+                thetal.append(thetan)
+                incr = incr + 0.01 #the increments that the car.step function works by
+
+                newNode = (xn,yn,thetan,phi,self.getNewId(),nn[4])
+                if self.isCollision(nn, newNode):
+                    print("Collision Found")
+                else:
+                    nodes[newNode[4]] = newNode
+                    print("NewNode: {}".format(newNode))
+
 
         
         # Check goal
-        best_dist = 100000
+        best_dist = 5000
         best_node = None
         for k in nodes.keys():
             node = nodes[k]
@@ -148,7 +215,7 @@ class RRT():
             last_id = n[5]
             if last_id == -1:
                 break
-
+        path.reverse()
         return path
 
 
