@@ -41,9 +41,11 @@ def solution(car):
 
     assert(controls != None)
 
-    times = [0]
-    for _ in controls:
-        times.append(times[-1]+car.dt)
+    #times = [0]
+    #for _ in controls:
+    #    times.append(times[-1]+car.dt)
+    controls.reverse()
+    times = range(0,(len(controls)+1),1)
 
     return controls, times
 
