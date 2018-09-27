@@ -5,7 +5,7 @@ import random
 class RRT():
 
     def __init__(self, boundary, start, goal, obstacles, space_resolution, stepFunction,
-     primitives=90, primitive_bounds=[-math.pi/4.0, math.pi/4.0], rounding=8, inflation=1.2):
+     primitives=90, primitive_bounds=[-math.pi/4.0, math.pi/4.0], rounding=8, inflation=1.75):
         
         self.epsilon = 0.1
         self.num_of_nodes = 5000
@@ -21,6 +21,12 @@ class RRT():
         self.Primitives = self.GetPrimitives(self.NumPrimitives, self.PrimBounds)
         self.Rounding = rounding
         self.ObstacleInflation = inflation
+
+        #smallest_ob = 10000000
+        #for ob in self.Obstacles:
+        #    if smallest_ob > ob[2]:
+        #        smallest_ob = ob[2]
+        #self.ObstacleInflation = smallest_ob/2.0
 
         self.id = -1
         self.goal_found = False
@@ -47,7 +53,7 @@ class RRT():
             angle = 0.25*math.pi
         if direction >0:
             angle = angle
-        if direction < 0:
+        if direction<0:
             angle = -angle
         return angle
 
@@ -126,15 +132,17 @@ class RRT():
         #        if self.checkCollision(a,b,c,ob[0],ob[1],ob[2]*self.ObstacleInflation):
         #            return True
         #return False
+
         for ob in self.Obstacles:
             d = self.getDistance(p2,ob)
-            if p2[0] < 0.0 or p2[0] > 20.0 or p2[1] < 0.0 or p2[1] > 10.0:
+            #if p2[0] < 0.0 or p2[0] > 20.0 or p2[1] < 0.0 or p2[1] > 10.0:
+            if p2[0] < 0.1 or p2[0] > 19.9 or p2[1] < 0.1 or p2[1] > 9.9:
                 return True #collision occured
             if ob[2] == 0.2:
                 if d <= 0.8:
                     #print("Collision")
                     return True
-            elif d<= 1.5*ob[2]:
+            elif d<= self.ObstacleInflation*ob[2]:
                # print("Collision")
                 return True
         return False
@@ -142,7 +150,6 @@ class RRT():
 
     def run(self):
         nodes = {} # nodes[id] = (x,y,theta,phi,id,parent)
-        path = []
 
         nodes[0] = (self.Start[0], self.Start[1], 0.0, 0.0, self.getNewId(), -1) #(x,y,theta,phi,id,parent)
         finalNode = None
@@ -150,7 +157,8 @@ class RRT():
         while i<self.num_of_nodes:
             i+=1
             #print("Iteration: {}".format(i))
-            rand = (random.random()*self.Boundry[1][0], random.random()*self.Boundry[1][1])
+            #rand = (random.random()*self.Boundry[1][0], random.random()*self.Boundry[1][1])
+            rand = (random.uniform(0.1,19.9) , random.uniform(0.1,9.9))
             if i%15==0:
                 rand = self.Goal
 
@@ -222,7 +230,8 @@ class RRT():
         #nx, ny, nt, phi = self.step(best_node, self.Goal)
         #finalNode = (nx,ny,nt,phi,self.getNewId(),best_node[4])
         #nodes[finalNode[4]] = finalNode
-
+        
+        path = []
         finalNode = best_node
         last_id = finalNode[4]
         while True:
