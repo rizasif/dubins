@@ -6,7 +6,7 @@ class RRT():
 
     def __init__(self, boundary, start, goal, obstacles, space_resolution, stepFunction,
      primitives=90, primitive_bounds=[-math.pi/4.0, math.pi/4.0], rounding=8, inflation=1.75):
-        
+
         self.epsilon = 0.1
         self.num_of_nodes = 5000
 
@@ -21,6 +21,8 @@ class RRT():
         self.Primitives = self.GetPrimitives(self.NumPrimitives, self.PrimBounds)
         self.Rounding = rounding
         self.ObstacleInflation = inflation
+
+        random.seed(100)
 
         #smallest_ob = 10000000
         #for ob in self.Obstacles:
@@ -66,17 +68,17 @@ class RRT():
 
         #phi = math.atan2(p2[1]-p1[1],p2[0]-p1[0])
         #phi = phi-p1[2]
-        
+
         # assert( (phi >= self.PrimBounds[0]) and (phi <= self.PrimBounds[1]) )
         #if phi < self.PrimBounds[0]:
         #    phi = self.PrimBounds[0]
         #elif phi > self.PrimBounds[1]:
         #    phi = self.PrimBounds[1]
-        
+
         #nx,ny,nt = self.StepFunc(p1[0], p1[1], p1[2], phi)
         #return nx,ny,nt,phi
 
-        v = [math.cos(p1[2]), math.sin(p1[2])]
+        v = [math.cos(p1[3]), math.sin(p1[3])]
         g = [p2[0]-p1[0], p2[1]-p1[1]]
         phi = self.steering_angle(v,g)
 
@@ -94,12 +96,12 @@ class RRT():
         return a,b,c
 
     def checkCollision(self,a, b, c, x, y, radius):
-        # Finding the distance of line 
+        # Finding the distance of line
         # from center.
         dist = ((abs(a * x + b * y + c)) /
                 math.sqrt(a * a + b * b))
-    
-        # Checking if the distance is less 
+
+        # Checking if the distance is less
         # than, greater than or equal to radius.
         if (radius == dist):
             # print("Touch")
@@ -111,14 +113,14 @@ class RRT():
             # print("Outside")
             return False
 
-    def circle_intersect(self,x1, y1, x2, y2, r1, r2): 
-        distSq = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)  
+    def circle_intersect(self,x1, y1, x2, y2, r1, r2):
+        distSq = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)
         radSumSq = (r1 + r2) * (r1 + r2)
-        if (distSq == radSumSq): 
+        if (distSq == radSumSq):
             return True
-        elif (distSq > radSumSq): 
+        elif (distSq > radSumSq):
             return False
-        else: 
+        else:
             return True
 
     def isCollision(self, p1, p2):
@@ -126,7 +128,7 @@ class RRT():
         #cx = (p1[0]+p2[0])/2.0
         #cy = (p1[1]+p2[1])/2.0
         #r = math.sqrt(math.pow(p1[0]-p2[0],2) + math.pow(p1[1]-p2[1],2))/2.0
-        
+
         #for ob in self.Obstacles:
         #    if self.circle_intersect(cx,cy, ob[0],ob[1],r,ob[2]*self.ObstacleInflation):
         #        if self.checkCollision(a,b,c,ob[0],ob[1],ob[2]*self.ObstacleInflation):
@@ -135,15 +137,15 @@ class RRT():
 
         for ob in self.Obstacles:
             d = self.getDistance(p2,ob)
-            #if p2[0] < 0.0 or p2[0] > 20.0 or p2[1] < 0.0 or p2[1] > 10.0:
-            if p2[0] < 0.1 or p2[0] > 19.9 or p2[1] < 0.1 or p2[1] > 9.9:
+            if p2[0] < 0.0 or p2[0] > 20.0 or p2[1] < 0.0 or p2[1] > 10.0:
+            #if p2[0] < 0.1 or p2[0] > 19.9 or p2[1] < 0.1 or p2[1] > 9.9:
                 return True #collision occured
             if ob[2] == 0.2:
                 if d <= 0.8:
                     #print("Collision")
                     return True
-            elif d<= self.ObstacleInflation*ob[2]:
-               # print("Collision")
+            if d<= ob[2]:
+                # print("Collision")
                 return True
         return False
 
@@ -158,9 +160,9 @@ class RRT():
             i+=1
             #print("Iteration: {}".format(i))
             #rand = (random.random()*self.Boundry[1][0], random.random()*self.Boundry[1][1])
-            rand = (random.uniform(0.1,19.9) , random.uniform(0.1,9.9))
-            if i%15==0:
-                rand = self.Goal
+            rand = (random.uniform(0.0,20.0) , random.uniform(0.0,10.0))
+            if i%int(self.num_of_nodes*0.01)==0:
+                rand = (self.Goal[0],self.Goal[1])
 
             nn = nodes[0]
             for k in nodes.keys():
@@ -173,7 +175,7 @@ class RRT():
             v = [math.cos(nn[2]), math.sin(nn[2])]
             g = [rand[0]-nn[0], rand[1]-nn[1]]
             phi = self.steering_angle(v,g)
-            
+
             xl = [nn[0]]
             yl = [nn[1]]
             thetal = [nn[2]]
@@ -183,6 +185,9 @@ class RRT():
             thetan = 0
             while incr <= 1:
                 xn , yn , thetan = self.StepFunc(xl[-1],yl[-1],thetal[-1],phi)
+                if self.isCollision(None, (xn,yn)):
+                    #print("Collision")
+                    break
                 xl.append(xn)
                 yl.append(yn)
                 thetal.append(thetan)
@@ -204,12 +209,12 @@ class RRT():
                     print("GoalNode: {}".format(finalNode))
                     self.goal_found = True
                     break
-            
-            if self.goal_found:
-                break 
-        print("Iteration: {}".format(i))            
 
-        
+            if self.goal_found:
+                break
+        print("Iteration: {}".format(i))
+
+
         # Check goal
         if not self.goal_found:
             best_dist = 100000
@@ -223,14 +228,14 @@ class RRT():
         else:
             best_node = finalNode
             best_dist = self.getDistance(best_node, self.Goal)
-        
+
         print("Best Distance: {}".format(best_dist))
-            
-        
+
+
         #nx, ny, nt, phi = self.step(best_node, self.Goal)
         #finalNode = (nx,ny,nt,phi,self.getNewId(),best_node[4])
         #nodes[finalNode[4]] = finalNode
-        
+
         path = []
         finalNode = best_node
         last_id = finalNode[4]
@@ -242,5 +247,3 @@ class RRT():
                 break
 
         return path
-
-
